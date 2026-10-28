@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { register } from '../api'
+import { register, resendConfirmation } from '../api'
 import { useAuth } from '../AuthContext'
 
 export default function AuthModal({ initialTab, onClose }) {
@@ -39,6 +39,22 @@ export default function AuthModal({ initialTab, onClose }) {
     }
   }
 
+  // Повторно надіслати лист із підтвердженням email
+  const resend = async () => {
+    if (!f.email) return setErr('Введіть email, на який надіслати лист')
+    setErr('')
+    setInfo('')
+    setBusy(true)
+    try {
+      await resendConfirmation(f.email)
+      setInfo('Лист із підтвердженням надіслано. Перевірте пошту (і папку «Спам»).')
+    } catch (ex) {
+      setErr(ex.message)
+    } finally {
+      setBusy(false)
+    }
+  }
+
   return (
     <div className="overlay" onClick={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
@@ -55,6 +71,11 @@ export default function AuthModal({ initialTab, onClose }) {
           {info && <div className="ok">{info}</div>}
           {err && <div className="err">{err}</div>}
           <button className="btn primary" disabled={busy}>{busy ? 'Зачекайте...' : reg ? 'Створити акаунт' : 'Увійти'}</button>
+          {!reg && (
+            <button type="button" className="link-btn" onClick={resend} disabled={busy}>
+              Не підтвердили email? Надіслати лист ще раз
+            </button>
+          )}
         </form>
       </div>
     </div>

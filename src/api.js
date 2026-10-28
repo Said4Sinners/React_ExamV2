@@ -45,16 +45,17 @@ export function getRoles() {
 export function errorMessage(error, fallback) {
   const d = error?.response?.data
   if (!d) return error?.response ? fallback : 'Сервер недоступний. Перевірте з’єднання.'
-  if (typeof d === 'string' && d.trim()) return d
-  const errors = d.errors ?? d.Errors
+  if (typeof d === 'string') return d.trim() && !d.trim().startsWith('<') ? d : fallback
+  const errors = Array.isArray(d) ? d : d.errors ?? d.Errors
+  const one = (e) => (typeof e === 'string' ? e : e?.description ?? e?.Description ?? e?.message ?? e?.Message ?? '')
   if (Array.isArray(errors)) {
-    const text = errors.map((e) => (typeof e === 'string' ? e : e.description ?? e.Description ?? '')).filter(Boolean).join(', ')
+    const text = errors.map(one).filter(Boolean).join(', ')
     if (text) return text
   } else if (errors && typeof errors === 'object') {
     const text = Object.values(errors).flat().join(', ')
     if (text) return text
   }
-  return d.message ?? d.Message ?? d.detail ?? d.title ?? fallback
+  return d.message ?? d.Message ?? d.error ?? d.Error ?? d.detail ?? d.title ?? fallback
 }
 
 // POST /api/Auth/refresh — один спільний запит на всі паралельні 401/403
@@ -90,7 +91,7 @@ api.interceptors.response.use(
   async (error) => {
     const original = error.config
     const status = error.response?.status
-    const isAuthCall = /\/api\/Auth\/(login|register|refresh|logout|confirm-email)/i.test(original?.url || '')
+    const isAuthCall = /\/api\/Auth\/(login|register|refresh|logout|confirm-email|resend-confirmation)/i.test(original?.url || '')
     if (original && (status === 401 || status === 403) && !original._retry && !isAuthCall) {
       original._retry = true
       const hadSession = !!accessToken
@@ -127,7 +128,11 @@ export async function login(email, password) {
     if (!token) throw new Error('Сервер не повернув access-токен')
     setAccessToken(token)
   } catch (e) {
-    throw new Error(e.response ? errorMessage(e, 'Невірний email або пароль') : e.message)
+    if (!e.response) throw new Error(e.message)
+    const err = new Error(errorMessage(e, 'Невірний email або пароль'))
+    // 403 або текст про підтвердження -> email ще не підтверджено
+    if (e.response.status === 403 || /confirm|verif|підтверд|подтверд/i.test(err.message)) err.code = 'EMAIL_NOT_CONFIRMED'
+    throw err
   }
 }
 
@@ -179,9 +184,30 @@ export async function restoreSession() {
   return fetchProfile()
 }
 
+// POST /api/Auth/resend-confirmation  { email } — повторно надіслати лист із підтвердженням
+export async function resendConfirmation(email) {
+  try {
+    await api.post('/api/Auth/resend-confirmation', { email })
+  } catch (e) {
+    throw new Error(errorMessage(e, 'Не вдалося надіслати лист. Спробуйте пізніше.'))
+  }
+}
+
 // POST /api/Auth/confirm-email  { userId, token }
+// Токен з листа — це base64 від Identity-токена ("CfDJ8..."). Спершу шлемо як є (бекенд сам декодує),
+// а якщо сервер відповів 400 — пробуємо ще раз із розкодованим токеном.
 export async function confirmEmail(userId, token) {
-  await api.post('/api/Auth/confirm-email', { userId, token })
+  try {
+    await api.post('/api/Auth/confirm-email', { userId, token })
+  } catch (e) {
+    let decoded = ''
+    try { decoded = atob(token) } catch { /* токен не base64 */ }
+    if (e.response?.status === 400 && decoded.startsWith('CfDJ')) {
+      await api.post('/api/Auth/confirm-email', { userId, token: decoded })
+      return
+    }
+    throw e
+  }
 }
 
 /* ---------------- Аватар власного профілю (уточнити за Swagger) ---------------- */

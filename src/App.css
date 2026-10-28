@@ -201,3 +201,7 @@ a.btn { display: inline-block; }
 @media (max-width: 860px) {
   .lobby-grid, .game-hero { grid-template-columns: 1fr; }
 }
+
+.link-btn { background: none; border: 0; padding: 0; color: var(--muted); font-size: 13px; text-decoration: underline; cursor: pointer; justify-self: center; }
+.link-btn:hover { color: var(--accent); }
+.link-btn:disabled { opacity: .6; cursor: default; }
