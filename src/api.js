@@ -23,15 +23,22 @@ export function clearAccessToken() { accessToken = '' }
 
 const pickToken = (d) => d?.accessToken ?? d?.AccessToken ?? ''
 
+// Payload access-токена (JWT) — звідси беремо ролі й дані користувача
+function jwtPayload() {
+  try {
+    return JSON.parse(atob(accessToken.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')))
+  } catch {
+    return {}
+  }
+}
+
+const CLAIM = 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/'
+
 // Ролі з JWT (для адмін-інтерфейсу)
 export function getRoles() {
-  try {
-    const payload = JSON.parse(atob(accessToken.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')))
-    const r = payload.role ?? payload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] ?? []
-    return Array.isArray(r) ? r : [r]
-  } catch {
-    return []
-  }
+  const p = jwtPayload()
+  const r = p.role ?? p['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] ?? []
+  return Array.isArray(r) ? r : [r]
 }
 
 // Текст помилки з відповіді сервера (ProblemDetails / ValidationProblem / Identity errors)
@@ -51,7 +58,7 @@ export function errorMessage(error, fallback) {
 }
 
 // POST /api/Auth/refresh — один спільний запит на всі паралельні 401/403
-function refreshAccessToken() {
+export function refreshAccessToken() {
   if (!refreshPromise) {
     // окремий виклик axios без інтерсепторів, щоб не зациклитись
     refreshPromise = axios
@@ -129,36 +136,52 @@ export async function logout() {
   clearAccessToken()
 }
 
-// GET /api/Auth/me (+ GET /api/users/{id}, щоб підтягнути аватар і bio) -> профіль або null
+// Профіль користувача. Спершу GET /api/Auth/me; якщо такого ендпойнта немає — беремо дані з JWT.
 export async function fetchProfile() {
+  if (!accessToken) return null
+  let d = null
   try {
-    const { data: d } = await api.get('/api/Auth/me')
-    const id = d.userId ?? d.UserId ?? d.id ?? d.Id
-    const profile = {
-      id,
-      nick: d.displayName ?? d.DisplayName ?? d.userName ?? d.UserName ?? 'Гравець',
-      email: d.email ?? d.Email ?? '',
-      avatarUrl: d.avatarUrl ?? d.AvatarUrl ?? null,
-      bio: d.bio ?? d.Bio ?? '',
-      roles: getRoles(),
-    }
-    if (id && !profile.avatarUrl) {
-      try {
-        const { data: u } = await api.get(`/api/users/${id}`)
-        profile.avatarUrl = u.avatarUrl ?? u.AvatarUrl ?? null
-        profile.bio = profile.bio || (u.bio ?? u.Bio ?? '')
-        profile.nick = u.displayName ?? u.DisplayName ?? profile.nick
-      } catch { /* публічний профіль необов'язковий */ }
-    }
-    return profile
+    d = (await api.get('/api/Auth/me')).data
   } catch {
-    return null
+    if (!accessToken) return null // сесія померла
   }
+  const p = jwtPayload()
+  const id = d?.userId ?? d?.UserId ?? d?.id ?? d?.Id ?? p.sub ?? p[`${CLAIM}nameidentifier`] ?? p.nameid
+  const userName = d?.userName ?? d?.UserName ?? p.unique_name ?? p.name ?? p[`${CLAIM}name`]
+  const email = d?.email ?? d?.Email ?? p.email ?? p[`${CLAIM}emailaddress`] ?? ''
+  if (!id && !userName && !email) return null
+  const profile = {
+    id,
+    nick: d?.displayName ?? d?.DisplayName ?? userName ?? 'Гравець',
+    email,
+    avatarUrl: d?.avatarUrl ?? d?.AvatarUrl ?? null,
+    bio: d?.bio ?? d?.Bio ?? '',
+    roles: getRoles(),
+  }
+  if (id && !profile.avatarUrl) {
+    try {
+      const { data: u } = await api.get(`/api/users/${id}`)
+      profile.avatarUrl = u.avatarUrl ?? u.AvatarUrl ?? null
+      profile.bio = profile.bio || (u.bio ?? u.Bio ?? '')
+      profile.nick = u.displayName ?? u.DisplayName ?? profile.nick
+    } catch { /* публічний профіль необов'язковий */ }
+  }
+  return profile
 }
 
-// GET /api/Auth/confirm-email?userId=...&token=...   (уточнити за Swagger)
+// Відновлення сесії при завантаженні сторінки: POST /api/Auth/refresh (refresh-cookie) -> access-токен -> профіль
+export async function restoreSession() {
+  try {
+    await refreshAccessToken()
+  } catch {
+    return null // користувач не залогінений
+  }
+  return fetchProfile()
+}
+
+// POST /api/Auth/confirm-email  { userId, token }
 export async function confirmEmail(userId, token) {
-  await api.get('/api/Auth/confirm-email', { params: { userId, token } })
+  await api.post('/api/Auth/confirm-email', { userId, token })
 }
 
 /* ---------------- Аватар власного профілю (уточнити за Swagger) ---------------- */

@@ -7,7 +7,8 @@ export default function ConfirmEmailPage() {
   const [sp] = useSearchParams()
   const { openAuth } = useAuth()
   const userId = sp.get('userId')
-  const token = sp.get('token') ?? sp.get('code')
+  const rawToken = sp.get('token') ?? sp.get('code')
+  const token = rawToken ? rawToken.replace(/ /g, '+') : rawToken // '+' у токені після розбору query стає пробілом
   const [state, setState] = useState(userId && token ? { s: 'loading' } : { s: 'invalid' })
   const started = useRef(false)
 

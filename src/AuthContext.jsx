@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { fetchProfile, login, logout, onSessionExpired } from './api'
+import { fetchProfile, login, logout, onSessionExpired, restoreSession } from './api'
 import AuthModal from './components/AuthModal'
 
 const AuthCtx = createContext(null)
@@ -16,7 +16,7 @@ export function AuthProvider({ children }) {
     // refresh не спрацював, хоча користувач був залогінений -> розлогінюємо й просимо увійти
     onSessionExpired(() => { setUser(null); setModal({ mode: 'login', redirect: false }) })
     let active = true
-    fetchProfile()
+    restoreSession()
       .then((u) => { if (active && u) setUser(u) })
       .finally(() => { if (active) setBooting(false) })
     return () => { active = false }
