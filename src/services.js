@@ -35,7 +35,17 @@ export async function createSession(body) {
   return { id }
 }
 
-const act = (id, path, body) => api.post(`/api/game-sessions/${id}/${path}`, body)
+// Дія над сесією. method — HTTP-метод, який очікуємо від API; якщо сервер відповів 405
+// (метод не дозволений), одразу пробуємо протилежний (PUT <-> POST), щоб не залежати від помилки в методі.
+const act = async (id, path, body, method = 'post') => {
+  const url = `/api/game-sessions/${id}/${path}`
+  try {
+    return await api.request({ url, method, data: body })
+  } catch (e) {
+    if (e.response?.status !== 405) throw e
+    return api.request({ url, method: method === 'put' ? 'post' : 'put', data: body })
+  }
+}
 
 export const joinSession = (id) => act(id, 'join')
 export const leaveSession = (id) => act(id, 'leave')
@@ -43,13 +53,14 @@ export const createTeam = (id, name) => act(id, 'teams', { name })
 export const joinTeam = (id, teamId) => act(id, `teams/${teamId}/join`)
 export const leaveTeam = (id) => act(id, 'teams/leave')
 
-// ⚠ Ендпойнти нижче лишаються в поточному GameSessionsController — звірити шляхи зі Swagger
+// Зміна стану сесії — PUT
+export const setReady = (id, isReady) => act(id, 'ready', { isReady }, 'put')
+export const startSession = (id) => act(id, 'start', undefined, 'put')
+export const completeSession = (id) => act(id, 'complete', undefined, 'put')
+export const cancelSession = (id) => act(id, 'cancel', undefined, 'put')
+
 export const updateSession = (id, body) => api.put(`/api/game-sessions/${id}`, body).then(() => ({ id }))
 export const deleteSession = (id) => api.delete(`/api/game-sessions/${id}`)
-export const setReady = (id, isReady) => act(id, 'ready', { isReady })
-export const startSession = (id) => act(id, 'start')
-export const completeSession = (id) => act(id, 'complete')
-export const cancelSession = (id) => act(id, 'cancel')
 export const deleteTeam = (id, teamId) => api.delete(`/api/game-sessions/${id}/teams/${teamId}`)
 
 /* ---------- Users ---------- */

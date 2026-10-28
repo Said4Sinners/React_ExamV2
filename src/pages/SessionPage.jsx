@@ -31,7 +31,8 @@ export default function SessionPage() {
       if (after) after()
       else await reload(true)
     } catch (e) {
-      setActionError(errorMessage(e, 'Не вдалося виконати дію'))
+      const status = e.response?.status
+      setActionError(errorMessage(e, '') || `Не вдалося виконати дію${status ? ` (код ${status})` : ''}`)
     } finally {
       setBusy(false)
     }
