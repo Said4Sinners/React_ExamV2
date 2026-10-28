@@ -12,7 +12,7 @@ export async function getGame(id) {
   const { data } = await api.get(`/api/games/${id}`)
   return normalizeGame(data)
 }
-// ⚠ адмін-ендпойнт обкладинки — уточнити за Swagger
+// ⚠ у списку Scalar такого ендпойнта немає — звірити, чи він існує
 export const uploadGameCover = (id, file) => {
   const body = new FormData()
   body.append('cover', file)
@@ -53,11 +53,12 @@ export const createTeam = (id, name) => act(id, 'teams', { name })
 export const joinTeam = (id, teamId) => act(id, `teams/${teamId}/join`)
 export const leaveTeam = (id) => act(id, 'teams/leave')
 
-// Зміна стану сесії — PUT
-export const setReady = (id, isReady) => act(id, 'ready', { isReady }, 'put')
-export const startSession = (id) => act(id, 'start', undefined, 'put')
-export const completeSession = (id) => act(id, 'complete', undefined, 'put')
-export const cancelSession = (id) => act(id, 'cancel', undefined, 'put')
+// Методи звірені зі Scalar: ready — PUT, start / complete / cancel — POST
+// ready: сервер очікує у тілі голе булеве значення (true / false), а не об'єкт
+export const setReady = (id, isReady) => act(id, 'ready', JSON.stringify(!!isReady), 'put')
+export const startSession = (id) => act(id, 'start')
+export const completeSession = (id) => act(id, 'complete')
+export const cancelSession = (id) => act(id, 'cancel')
 
 export const updateSession = (id, body) => api.put(`/api/game-sessions/${id}`, body).then(() => ({ id }))
 export const deleteSession = (id) => api.delete(`/api/game-sessions/${id}`)
