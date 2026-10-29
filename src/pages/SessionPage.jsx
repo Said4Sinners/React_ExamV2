@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../AuthContext'
 import { errorMessage } from '../api'
 import SessionFormModal from '../components/SessionFormModal'
-import { Avatar, RowsSkeleton, StateBox, StatusBadge, UserLink } from '../components/ui'
+import { Avatar, RowsSkeleton, StateBox, HostLink, StatusBadge, UserLink } from '../components/ui'
 import { useFetch } from '../hooks'
 import { MODE_LABELS, same } from '../normalize'
 import {
@@ -62,7 +62,7 @@ export default function SessionPage() {
                     <span className="muted">{MODE_LABELS[s.mode] ?? s.mode}</span>
                   </div>
                   <h1>{s.name}</h1>
-                  <p className="muted">Хост: <UserLink id={s.hostId} name={s.hostName} /> · Гравців: <b>{s.currentPlayers}/{s.maxPlayers}</b></p>
+                  <p className="muted">Хост: <HostLink id={s.hostId} name={s.hostName} /> · Гравців: <b>{s.currentPlayers}/{s.maxPlayers}</b></p>
                 </div>
 
                 <div className="lobby-actions">

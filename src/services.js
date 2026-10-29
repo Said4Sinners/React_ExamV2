@@ -16,7 +16,7 @@ export async function getGame(id) {
 export const uploadGameCover = (id, file) => {
   const body = new FormData()
   body.append('cover', file)
-  return api.post(`/api/games/${id}/cover`, body, { headers: { 'Content-Type': 'multipart/form-data' } })
+  return api.put(`/api/games/${id}/cover`, body, { headers: { 'Content-Type': 'multipart/form-data' } })
 }
 
 /* ---------- Sessions ---------- */

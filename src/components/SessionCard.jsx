@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { MODE_LABELS } from '../normalize'
-import { StatusBadge, UserLink } from './ui'
+import { HostLink, StatusBadge } from './ui'
 
 export default function SessionCard({ s, showGame }) {
   const pct = s.maxPlayers ? Math.min(100, (s.currentPlayers / s.maxPlayers) * 100) : 0
@@ -9,7 +9,7 @@ export default function SessionCard({ s, showGame }) {
       {showGame && <Link to={`/games/${s.gameId}`} className="badge">{s.gameName || 'Гра'}</Link>}
       <div className="grow">
         <b>{s.name}</b><br />
-        <small>Хост: <UserLink id={s.hostId} name={s.hostName} /> · {MODE_LABELS[s.mode] ?? s.mode}</small>
+        <small>Хост: <HostLink id={s.hostId} name={s.hostName} /> · {MODE_LABELS[s.mode] ?? s.mode}</small>
       </div>
       <StatusBadge status={s.status} />
       <div className="bar"><i style={{ width: `${pct}%` }} /></div>

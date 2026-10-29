@@ -210,13 +210,13 @@ export async function confirmEmail(userId, token) {
   }
 }
 
-/* ---------------- Аватар власного профілю (уточнити за Swagger) ---------------- */
+/* ---------------- Аватар власного профілю: PUT / DELETE /api/users/me/avatar ---------------- */
 
 export async function uploadAvatar(file) {
   const body = new FormData()
   body.append('avatar', file)
   try {
-    const { data } = await api.post('/api/profile/avatar', body, { headers: { 'Content-Type': 'multipart/form-data' } })
+    const { data } = await api.put('/api/users/me/avatar', body, { headers: { 'Content-Type': 'multipart/form-data' } })
     return data?.avatarUrl ?? data?.AvatarUrl ?? null
   } catch (e) {
     throw new Error(errorMessage(e, 'Не вдалося завантажити аватар'))
@@ -225,7 +225,7 @@ export async function uploadAvatar(file) {
 
 export async function deleteAvatar() {
   try {
-    await api.delete('/api/profile/avatar')
+    await api.delete('/api/users/me/avatar')
   } catch (e) {
     throw new Error(errorMessage(e, 'Не вдалося видалити аватар'))
   }
