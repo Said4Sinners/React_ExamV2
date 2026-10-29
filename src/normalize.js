@@ -75,13 +75,18 @@ export function normalizeSession(s) {
   if (!partsRaw.length) partsRaw = teamsRaw.flatMap((t) => t.raw.map((m) => ({ ...m, teamId: get(m, 'teamId') ?? t.id })))
   const participants = partsRaw.map(normalizeParticipant)
   const perTeam = Number(get(s, 'playersPerTeam') ?? 0) || null
+  const hostIdRaw = get(s, 'hostId', 'creatorId', 'ownerId', 'createdById') ?? get(host, 'id')
 
   return {
     id: get(s, 'id'),
     gameId: get(s, 'gameId') ?? get(game, 'id'),
     gameName: get(s, 'gameName') ?? get(game, 'name') ?? '',
-    hostId: get(s, 'hostId') ?? get(host, 'id'),
-    hostName: get(s, 'hostName', 'hostUserName', 'hostDisplayName') ?? get(host, 'displayName', 'userName') ?? '—',
+    hostId: hostIdRaw,
+    hostName: get(s, 'hostName', 'hostUserName', 'hostDisplayName', 'hostNickName', 'creatorName', 'creatorUserName', 'ownerName', 'ownerUserName', 'createdByName')
+      ?? get(host, 'displayName', 'userName', 'nickName')
+      ?? get(get(s, 'creator', 'owner', 'createdBy'), 'displayName', 'userName', 'nickName')
+      ?? participants.find((p) => same(p.userId, hostIdRaw))?.name
+      ?? '',
     name: get(s, 'name', 'title') ?? 'Сесія',
     mode: enumName(get(s, 'mode'), MODES) ?? 'FreeForAll',
     status: enumName(get(s, 'status'), STATUSES) ?? 'Waiting',

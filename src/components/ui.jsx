@@ -1,7 +1,8 @@
-import { Fragment, useState } from 'react'
+import { Fragment, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { assetUrl } from '../api'
 import { STATUS_LABELS } from '../normalize'
+import { getUser } from '../services'
 
 export function Avatar({ name = '?', url, size = 32 }) {
   const [badUrl, setBadUrl] = useState(null)
@@ -88,3 +89,19 @@ export const PageHead = ({ eyebrow, title, text, children }) => (
 )
 
 export const UserLink = ({ id, name }) => (id ? <Link className="ulink" to={`/players/${id}`}>{name}</Link> : <span>{name}</span>)
+
+// Ім'я хоста: якщо в списку сесій його немає — довантажуємо профіль за hostId (кеш, щоб не дублювати запити)
+const hostNameCache = new Map()
+const loadHostName = (id) => {
+  if (!hostNameCache.has(id)) hostNameCache.set(id, getUser(id).then((u) => u.name).catch(() => { hostNameCache.delete(id); return '' }))
+  return hostNameCache.get(id)
+}
+export function HostLink({ id, name }) {
+  const [loaded, setLoaded] = useState('')
+  useEffect(() => {
+    let alive = true
+    if (!name && id) loadHostName(id).then((n) => alive && setLoaded(n))
+    return () => { alive = false }
+  }, [id, name])
+  return <UserLink id={id} name={name || loaded || '—'} />
+}

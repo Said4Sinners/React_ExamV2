@@ -1,4 +1,4 @@
-import { api } from './api'
+import { api, fileForm } from './api'
 import { get, normalizeGame, normalizePaged, normalizeSession, normalizeUser } from './normalize'
 
 const clean = (o) => Object.fromEntries(Object.entries(o).filter(([, v]) => v !== '' && v != null))
@@ -14,9 +14,8 @@ export async function getGame(id) {
 }
 // ⚠ у списку Scalar такого ендпойнта немає — звірити, чи він існує
 export const uploadGameCover = (id, file) => {
-  const body = new FormData()
-  body.append('cover', file)
-  return api.post(`/api/games/${id}/cover`, body, { headers: { 'Content-Type': 'multipart/form-data' } })
+  const body = fileForm(file, 'cover', 'image')
+  return api.put(`/api/games/${id}/cover`, body, { headers: { 'Content-Type': 'multipart/form-data' } })
 }
 
 /* ---------- Sessions ---------- */
