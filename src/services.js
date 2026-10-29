@@ -1,8 +1,11 @@
 import { api, fileForm } from './api'
 import { get, normalizeBan, normalizeGame, normalizePaged, normalizeSession, normalizeUser } from './normalize'
+<<<<<<< HEAD
 
 // Номер сторінки шлемо під обома типовими іменами (page / pageNumber) — зайвий параметр ASP.NET ігнорує
 const paging = (page, pageSize) => ({ page, pageNumber: page, pageSize })
+=======
+>>>>>>> 202322f090d55e74f1742438685eb903c3db1a45
 
 const clean = (o) => Object.fromEntries(Object.entries(o).filter(([, v]) => v !== '' && v != null))
 

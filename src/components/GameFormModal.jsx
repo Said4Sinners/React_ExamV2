@@ -5,6 +5,22 @@ import { createGame, getGenres, uploadGameCover } from '../services'
 
 const MAX_COVER = 5 * 1024 * 1024
 
+// Транслітерація укр/рос літер для slug
+const TRANSLIT = {
+  а: 'a', б: 'b', в: 'v', г: 'h', ґ: 'g', д: 'd', е: 'e', є: 'ie', ж: 'zh', з: 'z', и: 'y', і: 'i', ї: 'i', й: 'i',
+  к: 'k', л: 'l', м: 'm', н: 'n', о: 'o', п: 'p', р: 'r', с: 's', т: 't', у: 'u', ф: 'f', х: 'kh', ц: 'ts', ч: 'ch',
+  ш: 'sh', щ: 'shch', ь: '', ю: 'iu', я: 'ia', ы: 'y', э: 'e', ъ: '',
+}
+// "Terraria 2: Reborn" -> "terraria-2-reborn"
+const slugify = (name) =>
+  name
+    .toLowerCase()
+    .replace(/[\u0400-\u04ff]/g, (ch) => TRANSLIT[ch] ?? '')
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+
 // Додавання нової гри (тільки адмін): назва, опис, жанр і необов’язкова обкладинка
 export default function GameFormModal({ onClose, onSaved }) {
   useEscape(onClose)
@@ -32,7 +48,9 @@ export default function GameFormModal({ onClose, onSaved }) {
     const name = f.name.trim()
     if (name.length < 2) return setErr('Назва: мінімум 2 символи')
     const genre = (genres.data ?? []).find((g) => String(g.id) === f.genreId)
-    const body = { name, description: f.description.trim(), ...(genre ? { genreId: genre.id } : {}) }
+    const slug = slugify(name)
+    if (!slug) return setErr('Назва має містити літери або цифри')
+    const body = { name, slug, description: f.description.trim(), ...(genre ? { genreId: genre.id } : {}) }
     setErr('')
     setBusy(true)
     let created
