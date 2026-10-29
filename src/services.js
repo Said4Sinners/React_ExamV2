@@ -1,11 +1,8 @@
 import { api, fileForm } from './api'
 import { get, normalizeBan, normalizeGame, normalizePaged, normalizeSession, normalizeUser } from './normalize'
-<<<<<<< HEAD
 
 // Номер сторінки шлемо під обома типовими іменами (page / pageNumber) — зайвий параметр ASP.NET ігнорує
 const paging = (page, pageSize) => ({ page, pageNumber: page, pageSize })
-=======
->>>>>>> 202322f090d55e74f1742438685eb903c3db1a45
 
 const clean = (o) => Object.fromEntries(Object.entries(o).filter(([, v]) => v !== '' && v != null))
 
@@ -29,7 +26,11 @@ export async function getGenres() {
   const raw = Array.isArray(data) ? data : get(data, 'items', 'data', 'results') ?? []
   return raw.map((g) => ({ id: get(g, 'id'), name: get(g, 'name') ?? '' })).filter((g) => g.id != null)
 }
+const TRANSLIT = { а: 'a', б: 'b', в: 'v', г: 'h', ґ: 'g', д: 'd', е: 'e', є: 'ie', ж: 'zh', з: 'z', и: 'y', і: 'i', ї: 'i', й: 'i', к: 'k', л: 'l', м: 'm', н: 'n', о: 'o', п: 'p', р: 'r', с: 's', т: 't', у: 'u', ф: 'f', х: 'kh', ц: 'ts', ч: 'ch', ш: 'sh', щ: 'shch', ь: '', ю: 'iu', я: 'ia', ы: 'y', э: 'e', ъ: '' }
+export const slugify = (name = '') =>
+  String(name).toLowerCase().replace(/[\u0400-\u04ff]/g, (c) => TRANSLIT[c] ?? '').normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
 export async function createGame(body) {
+  body = { ...body, slug: body.slug || slugify(body.name) || `game-${Date.now()}` }
   const res = await api.post('/api/games', body)
   const d = res.data
   const id = (d && typeof d === 'object' ? get(d, 'id') : d) || res.headers?.location?.split('/').pop()
