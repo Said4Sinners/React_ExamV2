@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { register, resendConfirmation } from '../api'
 import { useAuth } from '../AuthContext'
 
@@ -11,6 +11,13 @@ export default function AuthModal({ initialTab, onClose }) {
   const [busy, setBusy] = useState(false)
   const set = (k) => (e) => setF({ ...f, [k]: e.target.value })
   const reg = tab === 'register'
+
+  // закриття лише хрестиком або Esc — клік повз вікно більше не закриває
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [onClose])
 
   const submit = async (e) => {
     e.preventDefault()
@@ -56,9 +63,9 @@ export default function AuthModal({ initialTab, onClose }) {
   }
 
   return (
-    <div className="overlay" onClick={onClose}>
-      <div className="modal" onClick={(e) => e.stopPropagation()}>
-        <button className="close" onClick={onClose}>×</button>
+    <div className="overlay">
+      <div className="modal auth-modal" role="dialog" aria-modal="true">
+        <button type="button" className="close" onClick={onClose} aria-label="Закрити">×</button>
         <div className="tabs">
           <button className={!reg ? 'active' : ''} onClick={() => { setTab('login'); setErr('') }}>Вхід</button>
           <button className={reg ? 'active' : ''} onClick={() => { setTab('register'); setErr(''); setInfo('') }}>Реєстрація</button>

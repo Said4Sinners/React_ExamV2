@@ -67,8 +67,21 @@ export default function App() {
 
       <footer className="footer">
         <div className="wrap">
-          <div><div className="logo">GAME<span>CLUB</span></div><div>© 2026 · навчальний проєкт</div></div>
-          <div><h4>Розділи</h4><div><Link to="/games">Ігри</Link></div><div><Link to="/sessions">Сесії</Link></div><div><Link to="/players">Гравці</Link></div></div>
+          <div>
+            <div className="logo">GAME<span>CLUB</span></div>
+            <div>Знаходь команду, створюй сесії та грай разом.</div>
+          </div>
+          <div>
+            <h4>Розділи</h4>
+            <div><Link to="/games">Ігри</Link></div>
+            <div><Link to="/sessions">Сесії</Link></div>
+            <div><Link to="/players">Гравці</Link></div>
+          </div>
+          <div>
+            <h4>Акаунт</h4>
+            <div><Link to="/profile">Профіль</Link></div>
+          </div>
+          <div className="footer-bottom">© 2026 · навчальний проєкт</div>
         </div>
       </footer>
     </>
