@@ -96,7 +96,7 @@ const loadHostName = (id) => {
   if (!hostNameCache.has(id)) hostNameCache.set(id, getUser(id).then((u) => u.name).catch(() => { hostNameCache.delete(id); return '' }))
   return hostNameCache.get(id)
 }
-export function HostLink({ id, name }) {
+export function UserLinkAuto({ id, name }) {
   const [loaded, setLoaded] = useState('')
   useEffect(() => {
     let alive = true
@@ -105,3 +105,4 @@ export function HostLink({ id, name }) {
   }, [id, name])
   return <UserLink id={id} name={name || loaded || '—'} />
 }
+export const HostLink = UserLinkAuto

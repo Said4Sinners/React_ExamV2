@@ -110,3 +110,16 @@ export function normalizeSession(s) {
     }),
   }
 }
+
+// Бан у списку сесії. Форма відповіді в Scalar не описана, тому читаємо кілька можливих назв полів
+export function normalizeBan(b) {
+  if (typeof b === 'string') return { userId: b, name: '', avatarUrl: null, reason: '', bannedAt: null }
+  const user = get(b, 'user', 'bannedUser')
+  return {
+    userId: get(b, 'userId', 'bannedUserId') ?? get(user, 'id'),
+    name: get(b, 'userName', 'displayName', 'bannedUserName', 'nickName') ?? get(user, 'displayName', 'userName') ?? '',
+    avatarUrl: get(b, 'avatarUrl') ?? get(user, 'avatarUrl') ?? null,
+    reason: get(b, 'reason') ?? '',
+    bannedAt: get(b, 'bannedAt', 'createdAt', 'createdAtUtc', 'date') ?? null,
+  }
+}

@@ -212,15 +212,15 @@ export async function confirmEmail(userId, token) {
 
 /* ---------------- Аватар власного профілю: PUT / DELETE /api/users/me/avatar ---------------- */
 
-// Swagger не показує ім'я form-поля для IFormFile, тому надсилаємо файл під типовими іменами (зайві ASP.NET ігнорує)
-export function fileForm(file, ...names) {
+// Сервер приймає файл у multipart-полі 'file'
+export function fileForm(file) {
   const body = new FormData()
-  for (const n of ['file', ...names]) body.append(n, file)
+  body.append('file', file)
   return body
 }
 
 export async function uploadAvatar(file) {
-  const body = fileForm(file, 'avatar', 'image')
+  const body = fileForm(file)
   try {
     const { data } = await api.put('/api/users/me/avatar', body, { headers: { 'Content-Type': 'multipart/form-data' } })
     return data?.avatarUrl ?? data?.AvatarUrl ?? null

@@ -1,6 +1,7 @@
 import { Link, NavLink, Navigate, Route, Routes } from 'react-router-dom'
 import { useAuth } from './AuthContext'
 import { Avatar } from './components/ui'
+import AdminPage from './pages/AdminPage'
 import ConfirmEmailPage from './pages/ConfirmEmailPage'
 import GamePage from './pages/GamePage'
 import GamesPage from './pages/GamesPage'
@@ -19,7 +20,7 @@ const NotFound = () => (
 )
 
 export default function App() {
-  const { user, booting, openAuth, signOut } = useAuth()
+  const { user, booting, isAdmin, openAuth, signOut } = useAuth()
 
   return (
     <>
@@ -30,6 +31,7 @@ export default function App() {
             <NavLink to="/games">Ігри</NavLink>
             <NavLink to="/sessions">Сесії</NavLink>
             <NavLink to="/players">Гравці</NavLink>
+            {isAdmin && <NavLink to="/admin">Адмін</NavLink>}
           </nav>
           <div className="auth">
             {booting ? null : user ? (
@@ -59,6 +61,7 @@ export default function App() {
           <Route path="/sessions/:id" element={<SessionPage />} />
           <Route path="/players" element={<PlayersPage />} />
           <Route path="/players/:id" element={<PlayerPage />} />
+          <Route path="/admin" element={<AdminPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/confirm-email" element={<ConfirmEmailPage />} />
           <Route path="*" element={<NotFound />} />

@@ -35,3 +35,12 @@ export function useFetch(fn, deps = [], { poll = 0 } = {}) {
 
   return { ...state, reload: load }
 }
+
+// Закриття модалки клавішею Esc (клік повз вікно не закриває — щоб не втрачати введене)
+export function useEscape(onClose) {
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [onClose])
+}
