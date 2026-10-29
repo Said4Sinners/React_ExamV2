@@ -63,7 +63,7 @@ export function refreshAccessToken() {
   if (!refreshPromise) {
     // окремий виклик axios без інтерсепторів, щоб не зациклитись
     refreshPromise = axios
-      .post(`${API_URL}/api/Auth/refresh`, null, { withCredentials: true })
+      .post(`${API_URL}/api/auth/refresh`, null, { withCredentials: true })
       .then(({ data }) => {
         const token = pickToken(data)
         if (!token) throw new Error('Сервер не повернув access-токен')
