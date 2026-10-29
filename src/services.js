@@ -1,26 +1,41 @@
 import { api, fileForm } from './api'
-import { get, normalizeGame, normalizePaged, normalizeSession, normalizeUser } from './normalize'
+import { get, normalizeBan, normalizeGame, normalizePaged, normalizeSession, normalizeUser } from './normalize'
+
+// Номер сторінки шлемо під обома типовими іменами (page / pageNumber) — зайвий параметр ASP.NET ігнорує
+const paging = (page, pageSize) => ({ page, pageNumber: page, pageSize })
 
 const clean = (o) => Object.fromEntries(Object.entries(o).filter(([, v]) => v !== '' && v != null))
 
 /* ---------- Games ---------- */
 export async function getGames(page = 1, pageSize = 100) {
-  const { data } = await api.get('/api/games', { params: { page, pageSize } })
+  const { data } = await api.get('/api/games', { params: paging(page, pageSize) })
   return normalizePaged(data, page, pageSize, normalizeGame).items
 }
 export async function getGame(id) {
   const { data } = await api.get(`/api/games/${id}`)
   return normalizeGame(data)
 }
-// ⚠ у списку Scalar такого ендпойнта немає — звірити, чи він існує
 export const uploadGameCover = (id, file) => {
-  const body = fileForm(file, 'cover', 'image')
+  const body = fileForm(file)
   return api.put(`/api/games/${id}/cover`, body, { headers: { 'Content-Type': 'multipart/form-data' } })
+}
+
+// Додавання гри (тільки адмін). Жанри — GET /api/genres
+export async function getGenres() {
+  const { data } = await api.get('/api/genres')
+  const raw = Array.isArray(data) ? data : get(data, 'items', 'data', 'results') ?? []
+  return raw.map((g) => ({ id: get(g, 'id'), name: get(g, 'name') ?? '' })).filter((g) => g.id != null)
+}
+export async function createGame(body) {
+  const res = await api.post('/api/games', body)
+  const d = res.data
+  const id = (d && typeof d === 'object' ? get(d, 'id') : d) || res.headers?.location?.split('/').pop()
+  return { id }
 }
 
 /* ---------- Sessions ---------- */
 export async function getSessions({ gameId, mode, status, page = 1, pageSize = 10 }) {
-  const { data } = await api.get('/api/game-sessions', { params: clean({ gameId, mode, status, page, pageSize }) })
+  const { data } = await api.get('/api/game-sessions', { params: clean({ gameId, mode, status, ...paging(page, pageSize) }) })
   return normalizePaged(data, page, pageSize, normalizeSession)
 }
 export async function getSession(id) {
@@ -65,10 +80,21 @@ export const deleteTeam = (id, teamId) => api.delete(`/api/game-sessions/${id}/t
 
 /* ---------- Users ---------- */
 export async function getUsers({ search, page = 1, pageSize = 12 }) {
-  const { data } = await api.get('/api/users', { params: clean({ search, page, pageSize }) })
+  const { data } = await api.get('/api/users', { params: clean({ search, ...paging(page, pageSize) }) })
   return normalizePaged(data, page, pageSize, normalizeUser)
 }
 export async function getUser(id) {
   const { data } = await api.get(`/api/users/${id}`)
   return normalizeUser(data)
+}
+
+/* ---------- Модерація сесії (адмін) ---------- */
+export const kickParticipant = (sessionId, userId) => api.delete(`/api/game-sessions/${sessionId}/participants/${userId}`)
+export const banParticipant = (sessionId, userId, reason) =>
+  api.put(`/api/game-sessions/${sessionId}/bans/${userId}`, { reason: reason?.trim() || null })
+export const unbanUser = (sessionId, userId) => api.delete(`/api/game-sessions/${sessionId}/bans/${userId}`)
+export async function getSessionBans(sessionId) {
+  const { data } = await api.get(`/api/game-sessions/${sessionId}/bans`)
+  const raw = Array.isArray(data) ? data : get(data, 'items', 'bans', 'data') ?? []
+  return raw.map(normalizeBan)
 }

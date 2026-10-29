@@ -1,11 +1,16 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { useAuth } from '../AuthContext'
+import GameFormModal from '../components/GameFormModal'
 import { Cover, CardsSkeleton, PageHead, StateBox } from '../components/ui'
 import { useFetch } from '../hooks'
 import { getGames } from '../services'
 
 export default function GamesPage() {
+  const { isAdmin } = useAuth()
   const { data, loading, error, reload } = useFetch(() => getGames(1, 100), [])
+  const [adding, setAdding] = useState(false)
+  const [notice, setNotice] = useState(null)
   const [genre, setGenre] = useState('Усі')
   const [q, setQ] = useState('')
   const games = useMemo(() => data ?? [], [data])
@@ -18,7 +23,19 @@ export default function GamesPage() {
 
   return (
     <section>
-      <PageHead eyebrow="GAMECLUB LIBRARY" title="Бібліотека ігор" text="Обери гру, подивись відкриті сесії та збери команду." />
+      <PageHead eyebrow="GAMECLUB LIBRARY" title="Бібліотека ігор" text="Обери гру, подивись відкриті сесії та збери команду.">
+        {isAdmin && <button className="btn" onClick={() => setAdding(true)}>+ Додати гру (admin)</button>}
+      </PageHead>
+
+      {notice && (
+        <div className={'notice' + (notice.coverError ? ' error' : '')}>
+          <span>
+            Гру «{notice.name}» додано.{notice.coverError ? ` Обкладинку не завантажено: ${notice.coverError}` : ''}{' '}
+            {notice.id && <Link className="ulink" to={`/games/${notice.id}`}>Відкрити</Link>}
+          </span>
+          <button className="btn sm" onClick={() => setNotice(null)}>Закрити</button>
+        </div>
+      )}
 
       <div className="toolbar">
         {genres.length > 0 && (
@@ -45,6 +62,13 @@ export default function GamesPage() {
           ))}
         </div>
       </StateBox>
+
+      {adding && (
+        <GameFormModal
+          onClose={() => setAdding(false)}
+          onSaved={(g) => { setAdding(false); setNotice(g); reload(true) }}
+        />
+      )}
     </section>
   )
 }

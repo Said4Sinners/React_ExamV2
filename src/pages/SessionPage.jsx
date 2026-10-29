@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../AuthContext'
 import { errorMessage } from '../api'
+import ModerationPanel from '../components/Moderation'
 import SessionFormModal from '../components/SessionFormModal'
 import { Avatar, RowsSkeleton, StateBox, HostLink, StatusBadge, UserLink } from '../components/ui'
 import { useFetch } from '../hooks'
@@ -14,7 +15,7 @@ import {
 export default function SessionPage() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { user, requireAuth } = useAuth()
+  const { user, requireAuth, isAdmin } = useAuth()
   // лобі: актуальні дані + тихе опитування API кожні 5 с
   const { data: s, loading, error, reload } = useFetch(() => getSession(id), [id], { poll: 5000 })
   const [busy, setBusy] = useState(false)
@@ -180,6 +181,8 @@ export default function SessionPage() {
                   </div>
                 )}
               </div>
+              {isAdmin && <ModerationPanel session={s} onChanged={() => reload(true)} />}
+
               <p className="muted poll-note">Лобі оновлюється автоматично кожні 5 секунд.</p>
 
               {editing && (
