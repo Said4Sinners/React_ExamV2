@@ -1,8 +1,8 @@
 import { Link, useParams } from 'react-router-dom'
 import { useAuth } from '../AuthContext'
-import { Avatar, StateBox } from '../components/ui'
+import { Avatar, StateBox, StatusBadge } from '../components/ui'
 import { useFetch } from '../hooks'
-import { same } from '../normalize'
+import { MODE_LABELS, same } from '../normalize'
 import { getUser } from '../services'
 
 export default function PlayerPage() {
@@ -27,6 +27,28 @@ export default function PlayerPage() {
               {user && same(user.id, p.id) && <Link className="btn primary" to="/profile">Мій профіль</Link>}
             </div>
           </div>
+        )}
+        {p && (
+          <>
+            <h3 className="section-title">Активні сесії</h3>
+            {p.activeSessions.length ? (
+              <div className="list">
+                {p.activeSessions.map((s) => (
+                  <div className="row session-row" key={s.id}>
+                    {s.gameName && <Link to={`/games/${s.gameId}`} className="badge">{s.gameName}</Link>}
+                    <div className="grow">
+                      <b>{s.name}</b><br />
+                      <small>{MODE_LABELS[s.mode] ?? s.mode}</small>
+                    </div>
+                    <StatusBadge status={s.status} />
+                    <Link className="btn sm primary" to={`/sessions/${s.id}`}>Відкрити лобі</Link>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="empty">Немає активних сесій</div>
+            )}
+          </>
         )}
       </StateBox>
     </section>

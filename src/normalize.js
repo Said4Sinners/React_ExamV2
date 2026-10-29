@@ -49,6 +49,15 @@ export const normalizeUser = (u) => ({
   userName: get(u, 'userName') ?? '',
   avatarUrl: get(u, 'avatarUrl') ?? null,
   bio: get(u, 'bio') ?? '',
+  // сервер віддає у профілі короткі сесії: { id, gameId, gameName, name, status, mode }
+  activeSessions: (get(u, 'activeSessions') ?? []).map((s) => ({
+    id: get(s, 'id'),
+    gameId: get(s, 'gameId'),
+    gameName: get(s, 'gameName') ?? '',
+    name: get(s, 'name', 'title') ?? 'Сесія',
+    status: enumName(get(s, 'status'), STATUSES) ?? 'Waiting',
+    mode: enumName(get(s, 'mode'), MODES) ?? 'FreeForAll',
+  })),
 })
 
 function normalizeParticipant(p) {
